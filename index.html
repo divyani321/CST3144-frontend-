@@ -44,9 +44,13 @@
 
 <body>
     <div id="app">
-        <button class="btn btn-primary position-absolute top-0 end-0 m-3" @click="showCheckout">
+        <button 
+            class="btn btn-primary position-absolute top-0 end-0 m-3" 
+            @click="showCheckout" 
+            :disabled="cartItemCount === 0">
             <i class="fa-solid fa-cart-shopping"></i> Checkout ({{ cartItemCount }})
         </button>
+
 
         <!-- Toggle between product and checkout page -->
         <div v-if="showProduct" class="container mt-5 mb-5">
@@ -57,6 +61,25 @@
                     <p class="lead">Explore a variety of fun and educational after-school programs!</p>
                 </div>
             </div>
+            <div class="row mb-3">
+                <div class="col-3">
+                    <label for="sort-attribute" class="form-label">Sort By:</label>
+                    <select id="sort-attribute" v-model="sortAttribute" class="form-select">
+                        <option value="title">Title</option>
+                        <option value="description">Description</option>
+                        <option value="availableInventory">Spaces</option>
+                        <option value="price">Price</option>
+                    </select>
+                </div>
+                <div class="col-3">
+                    <label for="sort-order" class="form-label">Order:</label>
+                    <select id="sort-order" v-model="sortOrder" class="form-select">
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                </div>
+            </div>
+            
 
             <div class="row">
 
@@ -69,8 +92,12 @@
                             <p class="text-muted">{{ product.description }}</p>
                             <p class="h5">{{ product.price }}</p>
                             <p class="h5">Available stock: {{ product.availableInventory }}</p>
-                            <button @click="addToCart(product)" v-if="canAddToCart(product)" class="btn btn-primary">Add
-                                to Cart</button>
+                            <button 
+                                @click="addToCart(product)" 
+                                :disabled="!canAddToCart(product) && !isAnyProductAdded" 
+                                class="btn btn-primary">
+                                Add to Cart
+                            </button>
                             <button v-else class="btn btn-secondary" disabled>Out of Stock</button>
                             <span v-if="product.availableInventory === cartCount(product.id)">All out!</span>
                             <span v-else-if="itemsLeft(product) < 5">Only {{ itemsLeft(product) }} left!</span>
@@ -156,6 +183,8 @@
             data: {
                 showProduct: true,
                 products: products,
+                sortAttribute: 'subject', // Default sorting attribute
+                sortOrder: 'asc',   
                 order: {
                     firstName: '',
                     lastName: '',
@@ -212,16 +241,30 @@
                     return product => product.availableInventory - this.cartCount(product.id);
                 },
                 sortedProducts() {
+        const attribute = this.sortAttribute;
+        const order = this.sortOrder === 'asc' ? 1 : -1;
 
-                    // the comparison function that defines the order
-                    function compare(a, b) {
-                        if (a.price > b.price) return 1;
-                        if (a.price < b.price) return -1;
-                        return 0;
-                    }
-                    // sort the 'products' array and return it
-                    return this.products.sort(compare);
-                },
+        return this.products.slice().sort((a, b) => {
+            // Sort spaces (availability) as numbers
+            if (attribute === 'availableInventory') {
+                return (a.availableInventory - b.availableInventory) * order;
+            }
+
+            // Sort title and description as strings
+            if (attribute === 'title' || attribute === 'description') {
+                const valueA = a[attribute].toLowerCase();
+                const valueB = b[attribute].toLowerCase();
+                if (valueA < valueB) return -1 * order;
+                if (valueA > valueB) return 1 * order;
+                return 0;
+            }
+
+            // Default sorting for other attributes (e.g., price)
+            if (a[attribute] < b[attribute]) return -1 * order;
+            if (a[attribute] > b[attribute]) return 1 * order;
+            return 0;
+        });
+    },
                 cartItems() {
                     let items = [];
                     this.cart.forEach(cartItem => {
@@ -232,6 +275,9 @@
                     });
                     return items;
                 },
+                isAnyProductAdded() {
+                 return this.cart.length > 0; // Returns true if the cart has at least one item
+       },
                 totalPrice() {
                     return this.cart.reduce((total, cartItem) => {
                         let product = this.products.find(p => p.id === cartItem.id);
