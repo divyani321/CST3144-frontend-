@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+    <script src="https://unpkg.com/vue@2.7.8/dist/vue.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <script src="product.js"></script> <!-- this loads the products array -->
+
+    <title>After School Activities Shop</title>
+    <style>
+        /* Ensure images are sized and aligned properly */
+        .card img {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: cover;
+            margin-bottom: 1rem;
+        }
+
+        /*here im  Ensuring cards are aligned properly and of consistent height for my images */
+        .card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-body {
+            flex-grow: 1;
+            overflow: hidden;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <button class="btn btn-primary position-absolute top-0 end-0 m-3" @click="showCheckout">
+            <i class="fa-solid fa-cart-shopping"></i> Checkout ({{ cartItemCount }})
+        </button>
+
+        <!-- Toggle between product and checkout page -->
+        <div v-if="showProduct" class="container mt-5 mb-5">
+            <!-- Title Section -->
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1>After School Activities</h1>
+                    <p class="lead">Explore a variety of fun and educational after-school programs!</p>
+                </div>
+            </div>
+
+            <div class="row">
+
+                <!-- Loop over products and display each one -->
+                <div v-for="product in sortedProducts" :key="product.id" class="col-4 mb-3">
+                    <div class="card">
+                        <img :src="product.image" alt="Product image" class="img-fluid">
+                        <div class="card-body text-center">
+                            <h4 class="card-title">{{ product.title }}</h4>
+                            <p class="text-muted">{{ product.description }}</p>
+                            <p class="h5">{{ product.price }}</p>
+                            <p class="h5">Available stock: {{ product.availableInventory }}</p>
+                            <button @click="addToCart(product)" v-if="canAddToCart(product)" class="btn btn-primary">Add
+                                to Cart</button>
+                            <button v-else class="btn btn-secondary" disabled>Out of Stock</button>
+                            <span v-if="product.availableInventory === cartCount(product.id)">All out!</span>
+                            <span v-else-if="itemsLeft(product) < 5">Only {{ itemsLeft(product) }} left!</span>
+                            <span v-else>Buy now!</span>
+                            <!-- Product rating -->
+                            <div>
+                                <span v-for="n in product.rating"><i class="fa-solid fa-star"></i></span>
+                                <span v-for="n in (5 - product.rating)"><i class="fa-regular fa-star"></i></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Checkout page section -->
+        <div v-else class="container mt-5">
+            <h2>Checkout Page</h2>
+            <!-- Displaying the Products in Cart -->
+            <div v-if="cart.length > 0">
+                <h3>Products in Your Cart</h3>
+                <div class="list-group">
+                    <div v-for="(product, index) in cartItems" :key="index" class="list-group-item">
+                        <div class="row">
+                            <div class="col-md-2">
+                                <img :src="product.image" alt="Product image" class="img-fluid"
+                                    style="max-width: 100px;">
+                            </div>
+                            <div class="col-md-6">
+                                <h5>{{ product.title }}</h5>
+                                <p>{{ product.description }}</p>
+                                <p class="text-muted">Price: {{ product.price | currency }}</p>
+                            </div>
+                            <div class="col-md-2">
+                                <p>Quantity: {{ cartCount(product.id) }}</p>
+                            </div>
+                            <div class="col-md-2">
+                                <p>Total: {{ cartCount(product.id) * product.price | currency }}</p>
+                            </div>
+                            <!-- Add "Remove" button here -->
+                            <button @click="removeFromCart(product.id)" class="btn btn-danger btn-sm">Remove</button>
+
+
+                        </div>
+                    </div>
+                </div>
+                <!-- Cart Summary -->
+                <div class="mt-3">
+                    <h4>Order Summary</h4>
+                    <p>Total Items: {{ cartItemCount }}</p>
+                    <p>Total Price: {{ totalPrice | currency }}</p>
+                </div>
+            </div>
+            <div v-else>
+                <p>Your cart is empty.</p>
+            </div>
+
+            <!-- Shipping Info Form -->
+            <div v-if="cart.length > 0">
+                <h2>Shipping Information</h2>
+                <p><strong>First Name:</strong> <input v-model="order.firstName" /></p>
+                <p><strong>Last Name:</strong> <input v-model="order.lastName" /></p>
+                <p><strong>Address:</strong> <input v-model="order.address" /></p>
+                <p><strong>City:</strong> <input v-model="order.city" /></p>
+                <p><strong>State:</strong>
+                    <select v-model="order.state" class="form-control form-control-sm">
+                        <option disabled value="">State</option>
+                        <option v-for="(name, abbreviation) in states" :key="abbreviation" :value="abbreviation">{{ name
+                            }}</option>
+                    </select>
+                </p>
+                <p><strong>Zip/Postal Code:</strong> <input v-model="order.zip" /></p>
+                <p><input type="checkbox" id="gift" value="true" v-model="order.gift"> <label for="gift">Ship as
+                        Gift?</label></p>
+                <button @click="submitForm" class="btn btn-success">Place Order</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let app = new Vue({
+            el: '#app',
+            data: {
+                showProduct: true,
+                products: products,
+                order: {
+                    firstName: '',
+                    lastName: '',
+                    address: '',
+                    city: '',
+                    zip: '',
+                    state: '',
+                    method: 'Home',
+                    gift: false
+                },
+                states: {
+                    AL: 'Alabama',
+                    AR: 'Arizona',
+                    CA: 'California',
+                    NV: 'Nevada',
+                },
+                cart: [] // array to store items in shopping cart
+            },
+            methods: {
+                addToCart(product) {
+                    let itemInCart = this.cart.find(item => item.id === product.id);
+                    if (itemInCart) {
+                        // If the product is already in the cart, increase the quantity
+                        itemInCart.quantity++;
+                    } else {
+                        // Otherwise, add the product with quantity 1
+                        this.cart.push({ id: product.id, quantity: 1 });
+                    }
+                },
+                showCheckout() {
+                    this.showProduct = !this.showProduct;
+                },
+                submitForm() {
+                    alert('Order submitted!');
+                },
+                canAddToCart(product) {
+                    return product.availableInventory > this.cartCount(product.id);
+                },
+                cartCount(productId) {
+                    let count = 0;
+                    this.cart.forEach(item => {
+                        if (item.id === productId) {
+                            count += item.quantity; // Add the quantity if this product is in the cart
+                        }
+                    });
+                    return count;
+                }
+            },
+            computed: {
+                cartItemCount() {
+                    return this.cart.length;
+                },
+                itemsLeft() {   
+                    return product => product.availableInventory - this.cartCount(product.id);
+                },
+                sortedProducts() {
+
+                    // the comparison function that defines the order
+                    function compare(a, b) {
+                        if (a.price > b.price) return 1;
+                        if (a.price < b.price) return -1;
+                        return 0;
+                    }
+                    // sort the 'products' array and return it
+                    return this.products.sort(compare);
+                },
+                cartItems() {
+                    let items = [];
+                    this.cart.forEach(cartItem => {
+                        let product = this.products.find(p => p.id === cartItem.id);
+                        if (product && !items.find(item => item.id === product.id)) {
+                            items.push({ ...product, quantity: cartItem.quantity });
+                        }
+                    });
+                    return items;
+                },
+                totalPrice() {
+                    return this.cart.reduce((total, cartItem) => {
+                        let product = this.products.find(p => p.id === cartItem.id);
+                        return total + (product.price * cartItem.quantity);
+                    }, 0);
+                },
+                removeFromCart(productId) {
+                    // Find the index of the product in the cart
+                    let index = this.cart.findIndex(item => item.id === productId);
+                    if (index !== -1) {
+                        // Remove the product from the cart array
+                        this.cart.splice(index, 1);
+                    }
+                },
+
+
+
+            }
+        });
+    </script>
+</body>
+
+</html>
