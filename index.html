@@ -47,7 +47,7 @@
         <button 
             class="btn btn-primary position-absolute top-0 end-0 m-3" 
             @click="showCheckout" 
-            :disabled="cartItemCount === 0">
+            :disabled="cart.length === 0">
             <i class="fa-solid fa-cart-shopping"></i> Checkout ({{ cartItemCount }})
         </button>
 
@@ -112,8 +112,9 @@
                 </div>
             </div>
         </div>
+    <!--======================================================================================================================================-->> 
 
-        <!-- Checkout page section -->
+        <!--========================= =============================Checkout page section ==========================================================================================-->
         <div v-else class="container mt-5">
             <h2>Checkout Page</h2>
             <!-- Displaying the Products in Cart -->
@@ -137,7 +138,7 @@
                             <div class="col-md-2">
                                 <p>Total: {{ cartCount(product.id) * product.price | currency }}</p>
                             </div>
-                            <!-- Add "Remove" button here -->
+                            <!--================ Add "Remove" button here================================= -->
                             <button @click="removeFromCart(product.id)" class="btn btn-danger btn-sm">Remove</button>
 
 
@@ -176,7 +177,8 @@
             </div>
         </div>
     </div>
-
+<!------------=====================================vue.js Starting=====================================================================-->
+<!------------==========================================================================================================================-->
     <script>
         let app = new Vue({
             el: '#app',
@@ -204,6 +206,8 @@
                 cart: [] // array to store items in shopping cart
             },
             methods: {
+
+
                 addToCart(product) {
                     let itemInCart = this.cart.find(item => item.id === product.id);
                     if (itemInCart) {
@@ -214,6 +218,29 @@
                         this.cart.push({ id: product.id, quantity: 1 });
                     }
                 },
+
+
+                removeFromCart(productId) {
+        // Finding the product in the cart
+        let itemInCart = this.cart.find(item => item.id === productId);
+
+        if (itemInCart) {
+            if (itemInCart.quantity > 1) {
+                // Decrease quantity if it's greater than 1
+                itemInCart.quantity--;
+            } else {
+                // Remove the product if quantity reaches 0
+                let index = this.cart.indexOf(itemInCart);
+                this.cart.splice(index, 1);
+            }
+        }
+        // Ensure the user returns to the product page if the cart is emptied on the checkout page
+        if (this.cart.length === 0 && !this.showProduct) {
+            this.showProduct = true;
+        }
+    },
+
+
                 showCheckout() {
                     this.showProduct = !this.showProduct;
                 },
@@ -235,7 +262,7 @@
             },
             computed: {
                 cartItemCount() {
-                    return this.cart.length;
+                    return this.cart.reduce((count, item) => count + item.quantity, 0);
                 },
                 itemsLeft() {   
                     return product => product.availableInventory - this.cartCount(product.id);
@@ -284,16 +311,10 @@
                         return total + (product.price * cartItem.quantity);
                     }, 0);
                 },
-                removeFromCart(productId) {
-                    // Find the index of the product in the cart
-                    let index = this.cart.findIndex(item => item.id === productId);
-                    if (index !== -1) {
-                        // Remove the product from the cart array
-                        this.cart.splice(index, 1);
-                    }
-                },
 
 
+                
+          
 
             }
         });
