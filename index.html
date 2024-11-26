@@ -294,7 +294,7 @@
         const order = this.sortOrder === 'asc' ? 1 : -1;
 
         return this.products.slice().sort((a, b) => {
-            // Sort spaces (availability) as numbers
+            // Sorting availability of lessons//
             if (attribute === 'availableInventory') {
                 return (a.availableInventory - b.availableInventory) * order;
             }
