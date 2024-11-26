@@ -15,7 +15,7 @@
 
     <title>After School Activities Shop</title>
     <style>
-        /* Ensure images are sized and aligned properly */
+        /*  images are sized and aligned properly */
         .card img {
             width: 100%;
             height: auto;
@@ -52,7 +52,7 @@
         </button>
 
 
-        <!-- Toggle between product and checkout page -->
+        <!--=================================== Toggle between product and checkout page====================================================== -->
         <div v-if="showProduct" class="container mt-5 mb-5">
             <!-- Title Section -->
             <div class="row">
@@ -159,8 +159,13 @@
             <!-- Shipping Info Form -->
             <div v-if="cart.length > 0">
                 <h2>Shipping Information</h2>
-                <p><strong>First Name:</strong> <input v-model="order.firstName" /></p>
-                <p><strong>Last Name:</strong> <input v-model="order.lastName" /></p>
+                <!---------checking for name fiels letters only---------->
+                <p><strong>First Name:</strong> <input v-model="order.firstName" id="first-Name" /></p>
+                <p><strong>Last Name:</strong> <input v-model="order.lastName" id="last-Name" /></p>
+
+                <!---------------phone field numbers only---------->
+                <p><strong>Phone:</strong> <input v-model="order.phone" id="phone" /></p>
+
                 <p><strong>Address:</strong> <input v-model="order.address" /></p>
                 <p><strong>City:</strong> <input v-model="order.city" /></p>
                 <p><strong>State:</strong>
@@ -208,6 +213,8 @@
             methods: {
 
 
+
+
                 addToCart(product) {
                     let itemInCart = this.cart.find(item => item.id === product.id);
                     if (itemInCart) {
@@ -245,7 +252,20 @@
                     this.showProduct = !this.showProduct;
                 },
                 submitForm() {
-                    alert('Order submitted!');
+                    
+                    const nameRegex = /^[A-Za-z\s]+$/;
+            if (!nameRegex.test(this.order.firstName) || !nameRegex.test(this.order.lastName)) {
+                alert('Please enter valid names (letters only).');
+                return;
+            }
+
+            const phoneRegex = /^[0-9]+$/;
+            if (!phoneRegex.test(this.order.phone)) {
+                alert('Please enter a valid phone number (numbers only).');
+                return;
+            }
+
+            alert('Order submitted!');
                 },
                 canAddToCart(product) {
                     return product.availableInventory > this.cartCount(product.id);
@@ -260,6 +280,8 @@
                     return count;
                 }
             },
+
+        //================================Computed properties starting from here=============================================// 
             computed: {
                 cartItemCount() {
                     return this.cart.reduce((count, item) => count + item.quantity, 0);
