@@ -221,6 +221,8 @@
                         // Otherwise, add the product with quantity 1
                         this.cart.push({ id: product.id, quantity: 1 });
                     }
+                    // Decrease the available inventory of the product
+                    product.availableInventory--; 
                 },
 
 
@@ -236,6 +238,11 @@
                 // Remove the product if quantity reaches 0
                 let index = this.cart.indexOf(itemInCart);
                 this.cart.splice(index, 1);
+
+              // Increase the available inventory of the product
+        if (product) {
+            product.availableInventory++;
+        }  
             }
         }
         // Ensure the user returns to the product page if the cart is emptied on the checkout page
